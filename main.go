@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -20,6 +21,19 @@ type Game struct {
 	Date         string `json:"date"`
 }
 
+func (g *Game) Validate() error {
+	if g.ID < 1 {
+		return fmt.Errorf("user ID cannot be zero or less")
+	}
+	if g.HomeScore < 1 {
+		return fmt.Errorf("home score cannot be zero or less")
+	}
+	if g.VisitorScore < 1 {
+		return fmt.Errorf("visitor score cannot be zero or less")
+	}
+	return nil
+}
+
 func main() {
 	// Open the database file
 	InitDB()
@@ -32,12 +46,21 @@ func main() {
 
 	// Start the HTTP server
 	fmt.Println("Server is running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	srv := &http.Server{
+		Addr:              ":8080",
+		ReadTimeout:       1 * time.Second,
+		WriteTimeout:      1 * time.Second,
+		IdleTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 2 * time.Second,
+	}
+	srv.Handler = router
+	log.Fatal(srv.ListenAndServe())
 }
 
 func createGame(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Request from %s: %s %s", r.RemoteAddr, r.Method, r.URL)
 	var game Game
+
 	err := json.NewDecoder(r.Body).Decode(&game)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -45,8 +68,13 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	if err = game.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	// Insert the new game into the database
-	_, err = db.Exec("INSERT INTO games (home_team, visitor_team, home_score, visitor_score, date) VALUES (?, ?, ?, ?, ?)",
+	_, err = db.Exec("INSERT INTO games (home_team, visitor_team, home_score, visitor_score, date) VALUES ($1, $2, $3, $4, $5)",
 		game.HomeTeam, game.VisitorTeam, game.HomeScore, game.VisitorScore, game.Date)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
