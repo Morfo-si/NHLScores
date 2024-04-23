@@ -44,6 +44,7 @@ func main() {
 	router.HandleFunc("/games", listGames).Methods(http.MethodGet)
 	router.HandleFunc("/game", createGame).Methods(http.MethodPost)
 	router.HandleFunc("/game/{id}", deleteGame).Methods(http.MethodDelete)
+	router.HandleFunc("/game/{id}", getGame).Methods(http.MethodGet)
 
 	// Start the HTTP server
 	fmt.Println("Server is running on port 8080")
@@ -88,17 +89,43 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 func deleteGame(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Request from %s: %s %s", r.RemoteAddr, r.Method, r.URL)
 	vars := mux.Vars(r)
-	// we will need to extract the `id` of the article we
-	// wish to delete
 	id := vars["id"]
 
 	_, err := db.Exec("DELETE FROM games where ID = $1", id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func getGame(w http.ResponseWriter, r *http.Request) {
+	// Query the database for games
+	log.Printf("Request from %s: %s %s", r.RemoteAddr, r.Method, r.URL)
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	row := db.QueryRow("SELECT * FROM games where ID = $1", id)
+
+	var game Game
+	// Scan the row into the Game struct
+	err := row.Scan(&game.ID, &game.HomeTeam, &game.VisitorTeam, &game.HomeScore, &game.VisitorScore, &game.Date)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Convert the games slice to JSON
+	jsonData, err := json.Marshal(game)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	// Write the JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
 }
 
 func listGames(w http.ResponseWriter, r *http.Request) {
