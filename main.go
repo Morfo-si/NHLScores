@@ -43,6 +43,7 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/games", listGames).Methods(http.MethodGet)
 	router.HandleFunc("/game", createGame).Methods(http.MethodPost)
+	router.HandleFunc("/game/{id}", deleteGame).Methods(http.MethodDelete)
 
 	// Start the HTTP server
 	fmt.Println("Server is running on port 8080")
@@ -82,6 +83,22 @@ func createGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func deleteGame(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Request from %s: %s %s", r.RemoteAddr, r.Method, r.URL)
+	vars := mux.Vars(r)
+	// we will need to extract the `id` of the article we
+	// wish to delete
+	id := vars["id"]
+
+	_, err := db.Exec("DELETE FROM games where ID = $1", id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func listGames(w http.ResponseWriter, r *http.Request) {
