@@ -28,6 +28,7 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 
 	// routes
+	api.Get("/", Api)
 	api.Get("/game", game.GetGames)
 	api.Get("/game/:id", game.GetGame)
 	api.Post("/game", game.NewGame)
@@ -37,6 +38,10 @@ func SetupRoutes(app *fiber.App) {
 
 func Status(c *fiber.Ctx) error {
 	return c.SendString("Server is running! Send your request")
+}
+
+func Api(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(c.App().GetRoutes())
 }
 
 func main() {
