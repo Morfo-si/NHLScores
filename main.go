@@ -22,7 +22,27 @@ func InitDB() {
 	database.DBConn.AutoMigrate(&game.Game{})
 }
 
+func SetupRoutes(app *fiber.App) {
+	app.Get("/", Status)
+
+	api := app.Group("/api")
+
+	// routes
+	api.Get("/game", game.GetGames)
+	api.Get("/game/:id", game.GetGame)
+	api.Post("/game", game.NewGame)
+	api.Delete("/game/:id", game.DeleteGame)
+	api.Put("/game/:id", game.UpdateGame)
+}
+
+func Status(c *fiber.Ctx) error {
+	return c.SendString("Server is running! Send your request")
+}
+
 func main() {
+
+	InitDB()
+
 	app := fiber.New(fiber.Config{
 		AppName:           "NHLScores",
 		BodyLimit:         fiber.DefaultBodyLimit,
@@ -32,16 +52,9 @@ func main() {
 		ReadTimeout:       1 * time.Second,
 		WriteTimeout:      1 * time.Second,
 		IdleTimeout:       10 * time.Second,
-	},
-	)
-	// app.Use(cors.New())
+	})
 
-	InitDB()
-
-	app.Get("/game", game.GetGames)
-	app.Get("/game/:id", game.GetGame)
-	app.Post("/game", game.NewGame)
-	app.Delete("/game/:id", game.DeleteGame)
+	SetupRoutes(app)
 
 	log.Fatal(app.Listen(":8080"))
 }
