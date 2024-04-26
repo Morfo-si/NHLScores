@@ -21,42 +21,120 @@ func GetGames(c *fiber.Ctx) error {
 	db := database.DBConn
 	var games []Game
 	db.Find(&games)
-	return c.JSON(games)
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"success": true,
+			"message": "",
+			"data":    games,
+		},
+	)
 }
 
 func GetGame(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": "id cannot be empty",
+				"data":    nil,
+			})
+	}
 	db := database.DBConn
 
 	var game Game
 	db.Find(&game, id)
-	if game.ID <= 0 {
-		return c.Status(500).SendString("No game was found")
+	if game.ID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": fiber.ErrBadRequest.Error(),
+				"data":    nil,
+			})
 	}
-	return c.JSON(game)
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"success": true,
+			"message": "",
+			"data":    game,
+		},
+	)
 }
 
 func NewGame(c *fiber.Ctx) error {
 	db := database.DBConn
 	game := new(Game)
 	if err := c.BodyParser(game); err != nil {
-		return c.Status(503).SendString(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": fiber.ErrBadRequest.Error(),
+				"data":    game,
+			})
 	}
 	db.Create(&game)
-	return c.JSON(game)
+	return c.Status(fiber.StatusCreated).JSON(game)
 }
 
 func DeleteGame(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": "id cannot be empty",
+				"data":    nil,
+			})
+	}
+
 	db := database.DBConn
 
 	var game Game
 	db.First(&game, id)
-	if game.ID <= 0 {
-		return c.Status(500).SendString("No game was found")
+	if game.ID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": fiber.ErrBadRequest.Error(),
+				"data":    nil,
+			})
 	}
+
 	db.Delete(&game)
-	return c.SendString("Game successfully deleted")
+	return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+		"success": true,
+		"message": "Game successfully deleted",
+		"data":    game,
+	})
+}
+
+func UpdateGame(c *fiber.Ctx) error {
+	id := c.Params("id")
+	db := database.DBConn
+
+	game := new(Game)
+	if err := c.BodyParser(game); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": fiber.ErrBadRequest.Error(),
+				"data":    game,
+			})
+	}
+	if err := db.Model(Game{}).Where("id = ?", id).Updates(game).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(
+			&fiber.Map{
+				"success": false,
+				"message": fiber.ErrBadRequest.Error(),
+				"data":    game,
+			})
+	}
+	db.Find(&game, id)
+	return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+		"success": true,
+		"message": "Game successfully updated",
+		"data":    game,
+	})
 }
 
 func (g *Game) Validate() error {
