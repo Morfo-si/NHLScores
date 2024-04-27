@@ -2,11 +2,13 @@ package main
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/Morfo-si/NHLScores.git/database"
 	"github.com/Morfo-si/NHLScores.git/game"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -49,15 +51,21 @@ func main() {
 	InitDB()
 
 	app := fiber.New(fiber.Config{
-		AppName:           "NHLScores",
-		BodyLimit:         fiber.DefaultBodyLimit,
-		EnablePrintRoutes: true,
-		ServerHeader:      "NHLScores",
-		StrictRouting:     true,
-		ReadTimeout:       1 * time.Second,
-		WriteTimeout:      1 * time.Second,
-		IdleTimeout:       10 * time.Second,
+		AppName:       "NHLScores",
+		BodyLimit:     fiber.DefaultBodyLimit,
+		ServerHeader:  "NHLScores",
+		StrictRouting: true,
+		ReadTimeout:   1 * time.Second,
+		WriteTimeout:  1 * time.Second,
+		IdleTimeout:   10 * time.Second,
 	})
+
+	app.Use(logger.New(logger.Config{
+		Format:        "${time} [${ip}]:${port} ${status} - ${method} ${path}\n",
+		TimeZone:      "UTC",
+		Output:        os.Stdout,
+		DisableColors: false,
+	}))
 
 	SetupRoutes(app)
 
