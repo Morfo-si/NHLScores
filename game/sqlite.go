@@ -3,6 +3,7 @@ package game
 import (
 	"log"
 
+	"github.com/Morfo-si/NHLScores.git/model"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -25,7 +26,7 @@ func NewSqliteRepository() *SqliteRepository {
 		return nil
 	}
 
-	err = db.AutoMigrate(&Game{})
+	err = db.AutoMigrate(&model.Game{})
 	if err != nil {
 		log.Fatal("Failed to migrate the database schema. \n", err)
 		return nil
@@ -37,7 +38,7 @@ func NewSqliteRepository() *SqliteRepository {
 }
 
 func (s *SqliteRepository) GetGames(c *fiber.Ctx) error {
-	var games []Game
+	var games []model.Game
 	s.Db.Find(&games)
 	return c.Status(fiber.StatusOK).JSON(
 		&fiber.Map{
@@ -59,7 +60,7 @@ func (s *SqliteRepository) GetGame(c *fiber.Ctx) error {
 			})
 	}
 
-	var game Game
+	var game model.Game
 	s.Db.Find(&game, id)
 	if game.ID == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(
@@ -79,7 +80,7 @@ func (s *SqliteRepository) GetGame(c *fiber.Ctx) error {
 }
 
 func (s *SqliteRepository) NewGame(c *fiber.Ctx) error {
-	game := new(Game)
+	game := new(model.Game)
 	if err := c.BodyParser(game); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
 			&fiber.Map{
@@ -103,7 +104,7 @@ func (s *SqliteRepository) DeleteGame(c *fiber.Ctx) error {
 			})
 	}
 
-	var game Game
+	var game model.Game
 	s.Db.First(&game, id)
 	if game.ID == 0 {
 		return c.Status(fiber.StatusNotFound).JSON(
@@ -125,7 +126,7 @@ func (s *SqliteRepository) DeleteGame(c *fiber.Ctx) error {
 func (s *SqliteRepository) UpdateGame(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	game := new(Game)
+	game := new(model.Game)
 	if err := c.BodyParser(game); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
 			&fiber.Map{
@@ -134,7 +135,7 @@ func (s *SqliteRepository) UpdateGame(c *fiber.Ctx) error {
 				"data":    game,
 			})
 	}
-	if err := s.Db.Model(Game{}).Where("id = ?", id).Updates(game).Error; err != nil {
+	if err := s.Db.Model(model.Game{}).Where("id = ?", id).Updates(game).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
 			&fiber.Map{
 				"success": false,
