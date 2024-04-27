@@ -6,23 +6,9 @@ import (
 	"time"
 
 	"github.com/Morfo-si/NHLScores.git/database"
-	"github.com/Morfo-si/NHLScores.git/game"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
-
-// InitDB creates a SQLite DB and populates it.
-func InitDB() {
-	var err error
-	database.DBConn, err = gorm.Open(sqlite.Open("hockey.db"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	database.DBConn.AutoMigrate(&game.Game{})
-}
 
 func SetupRoutes(app *fiber.App) {
 	app.Get("/", Status)
@@ -31,11 +17,11 @@ func SetupRoutes(app *fiber.App) {
 
 	// routes
 	api.Get("/", Api)
-	api.Get("/game", game.GetGames)
-	api.Get("/game/:id", game.GetGame)
-	api.Post("/game", game.NewGame)
-	api.Delete("/game/:id", game.DeleteGame)
-	api.Put("/game/:id", game.UpdateGame)
+	api.Get("/game", database.Repo.GetGames)
+	api.Get("/game/:id", database.Repo.GetGame)
+	api.Post("/game", database.Repo.NewGame)
+	api.Delete("/game/:id", database.Repo.DeleteGame)
+	api.Put("/game/:id", database.Repo.UpdateGame)
 }
 
 func Status(c *fiber.Ctx) error {
@@ -48,7 +34,7 @@ func Api(c *fiber.Ctx) error {
 
 func main() {
 
-	InitDB()
+	database.InitDB()
 
 	app := fiber.New(fiber.Config{
 		AppName:       "NHLScores",
