@@ -45,10 +45,10 @@ func GetGame(c *fiber.Ctx) error {
 	var game Game
 	db.Find(&game, id)
 	if game.ID == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(
+		return c.Status(fiber.StatusNotFound).JSON(
 			&fiber.Map{
 				"success": false,
-				"message": fiber.ErrBadRequest.Error(),
+				"message": fiber.ErrNotFound.Error(),
 				"data":    nil,
 			})
 	}
@@ -92,10 +92,10 @@ func DeleteGame(c *fiber.Ctx) error {
 	var game Game
 	db.First(&game, id)
 	if game.ID == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(
+		return c.Status(fiber.StatusNotFound).JSON(
 			&fiber.Map{
 				"success": false,
-				"message": fiber.ErrBadRequest.Error(),
+				"message": fiber.ErrNotFound.Error(),
 				"data":    nil,
 			})
 	}
@@ -125,7 +125,7 @@ func UpdateGame(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(
 			&fiber.Map{
 				"success": false,
-				"message": fiber.ErrBadRequest.Error(),
+				"message": fiber.ErrNotFound.Error(),
 				"data":    game,
 			})
 	}
