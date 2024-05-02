@@ -13,8 +13,11 @@ RUN go mod download
 # Copy the source code from the current directory to the Working Directory inside the container
 COPY . .
 
+# Create directory for binary
+RUN mkdir bin
+
 # Build the Go app
-RUN go build -v -o ./bin ./cmd/... ./internal/...
+RUN go build -v -o ./bin ./...
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
