@@ -2,12 +2,10 @@ package model
 
 import (
 	"fmt"
-
-	"gorm.io/gorm"
 )
 
 type Game struct {
-	gorm.Model
+	ID           uint   `gorm:"primaryKey"`
 	HomeTeam     string `json:"home_team"`
 	VisitorTeam  string `json:"visitor_team"`
 	HomeScore    int    `json:"home_score"`
